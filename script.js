@@ -59,8 +59,8 @@ const SAAVN_API = 'https://www.jiosaavn.com/api.php';
 const HOME_Q = {
     trending: ['Blinding Lights', 'Shape of You', 'Sunflower', 'Levitating', 'Starboy', 'Havana', 'Circles Post Malone', 'Dont Start Now', 'bad guy billie eilish', 'Watermelon Sugar', 'Stay Kid Laroi', 'Peaches Justin Bieber'],
     popular: ['Bohemian Rhapsody', 'Believer', 'Closer Chainsmokers', 'Thunder', 'Faded Alan Walker', 'Radioactive', 'Someone Like You', 'Counting Stars', 'Happier Marshmello', 'Lucid Dreams', 'Old Town Road', 'Despacito'],
-    newReleases: ['Flowers Miley Cyrus', 'Anti Hero Taylor Swift', 'As It Was Harry Styles', 'Unholy Sam Smith', 'Calm Down Rema', 'Kill Bill SZA', 'Creepin Metro Boomin', 'Boy With Luv BTS'],
-    chill: ['Heather Conan Gray', 'Sweater Weather', 'Love Nwantiti', 'Perfect Ed Sheeran', 'All of Me John Legend', 'Photograph Ed Sheeran', 'A Thousand Years', 'Die For You Weeknd'],
+    newReleases: ['Flowers Miley Cyrus', 'Anti Hero Taylor Swift', 'As It Was Harry Styles', 'Unholy Sam Smith', 'Calm Down Rema', 'Kill Bill SZA', 'Creepin Metro Boomin', 'Boy With Luv BTS', 'Left and Right Charlie Puth', 'Under the Influence Chris Brown', 'Escapism Raye', 'Unstoppable Sia'],
+    chill: ['Heather Conan Gray', 'Sweater Weather', 'Love Nwantiti', 'Perfect Ed Sheeran', 'All of Me John Legend', 'Photograph Ed Sheeran', 'A Thousand Years', 'Die For You Weeknd', 'Falling Harry Styles', 'Dandelions Ruth B', 'Heat Waves Glass Animals', 'Before You Go Lewis Capaldi'],
 };
 
 const GENRES = [
@@ -114,6 +114,9 @@ function cacheDom() {
         'volumeSlider', 'volumeBtn', 'volumeIcon', 'muteIcon', 'mobileMenuBtn', 'sidebar', 'sidebarOverlay', 'sidebarClose',
         'toast', 'heroPlayBtn', 'likeBtn', 'greetingText', 'greetingSub', 'bgBackdrop', 'bgBackdropImage',
         'sidebarNowPlaying', 'sidebarArt', 'sidebarTitle', 'sidebarArtist',
+        'fullscreenPlayer', 'fsClose', 'fsCd', 'fsArt', 'fsTitle', 'fsArtist', 'fsAlbum',
+        'fsProgressBar', 'fsProgressFill', 'fsCurrentTime', 'fsTotalTime',
+        'fsPlayPause', 'fsPlayIcon', 'fsPauseIcon', 'fsPrev', 'fsNext', 'fsShuffle', 'fsRepeat',
     ].forEach(id => DOM[id] = $(`#${id}`));
 }
 
@@ -285,6 +288,7 @@ const Player = {
         try {
             await state.audio.play(); state.isPlaying = true; UI.updatePlayPause(true);
             UI.toast(`♪ ${song.title}${song.is320 ? ' • 320kbps' : ''}`);
+            FullscreenPlayer.sync(song); FullscreenPlayer.syncPlayPause();
         } catch (e) { state.isPlaying = false; UI.updatePlayPause(false); UI.toast('Tap play to start'); }
         state.isLoading = false;
     },
@@ -293,6 +297,7 @@ const Player = {
         if (state.isPlaying) { state.audio.pause(); state.isPlaying = false; }
         else { state.audio.play().catch(() => { }); state.isPlaying = true; }
         UI.updatePlayPause(state.isPlaying);
+        FullscreenPlayer.syncPlayPause();
     },
     next() {
         if (!state.playlist.length) return;
@@ -521,9 +526,14 @@ function bindEvents() {
 
     state.audio.addEventListener('timeupdate', () => {
         if (state.isDragging || !state.audio.duration) return;
-        DOM.progressFill.style.width = `${(state.audio.currentTime / state.audio.duration) * 100}%`;
+        const pct = (state.audio.currentTime / state.audio.duration) * 100;
+        DOM.progressFill.style.width = `${pct}%`;
         DOM.currentTime.textContent = UI.fmt(state.audio.currentTime);
         DOM.totalTime.textContent = UI.fmt(state.audio.duration);
+        // Sync fullscreen progress
+        if (DOM.fsProgressFill) DOM.fsProgressFill.style.width = `${pct}%`;
+        if (DOM.fsCurrentTime) DOM.fsCurrentTime.textContent = UI.fmt(state.audio.currentTime);
+        if (DOM.fsTotalTime) DOM.fsTotalTime.textContent = UI.fmt(state.audio.duration);
     });
     state.audio.addEventListener('loadedmetadata', () => DOM.totalTime.textContent = UI.fmt(state.audio.duration));
     state.audio.addEventListener('ended', () => {
@@ -564,6 +574,21 @@ function bindEvents() {
     DOM.sidebarClose.addEventListener('click', closeSidebar);
     DOM.heroPlayBtn.addEventListener('click', () => { if (state.playlist.length > 0) Player.play(0); });
 
+    // Fullscreen player: click album art to open
+    DOM.playerArt.addEventListener('click', () => FullscreenPlayer.open());
+    DOM.fsClose.addEventListener('click', () => FullscreenPlayer.close());
+    DOM.fsPlayPause.addEventListener('click', Player.toggle);
+    DOM.fsPrev.addEventListener('click', Player.prev);
+    DOM.fsNext.addEventListener('click', Player.next);
+    DOM.fsShuffle.addEventListener('click', Player.toggleShuffle);
+    DOM.fsRepeat.addEventListener('click', Player.toggleRepeat);
+    DOM.fsProgressBar.addEventListener('click', e => {
+        const r = DOM.fsProgressBar.getBoundingClientRect();
+        const pct = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+        Player.seek(pct);
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && DOM.fullscreenPlayer.style.display !== 'none') FullscreenPlayer.close(); });
+
     if ('mediaSession' in navigator) {
         navigator.mediaSession.setActionHandler('play', Player.toggle);
         navigator.mediaSession.setActionHandler('pause', Player.toggle);
@@ -574,6 +599,41 @@ function bindEvents() {
 
 function openSidebar() { DOM.sidebar.classList.add('open'); DOM.sidebarOverlay.classList.add('active'); }
 function closeSidebar() { DOM.sidebar.classList.remove('open'); DOM.sidebarOverlay.classList.remove('active'); }
+
+/* ── Fullscreen Player ─────────────────────── */
+const FullscreenPlayer = {
+    open() {
+        if (state.currentIndex < 0) return;
+        const song = state.playlist[state.currentIndex];
+        DOM.fsArt.src = song.img || '';
+        DOM.fsTitle.textContent = song.title;
+        DOM.fsArtist.textContent = song.artist;
+        DOM.fsAlbum.textContent = song.album || '';
+        DOM.fullscreenPlayer.style.display = 'flex';
+        requestAnimationFrame(() => DOM.fullscreenPlayer.classList.add('active'));
+        if (state.isPlaying) DOM.fsCd.classList.add('spinning');
+        else DOM.fsCd.classList.remove('spinning');
+        FullscreenPlayer.syncPlayPause();
+    },
+    close() {
+        DOM.fullscreenPlayer.classList.remove('active');
+        setTimeout(() => { DOM.fullscreenPlayer.style.display = 'none'; }, 400);
+    },
+    sync(song) {
+        if (DOM.fullscreenPlayer.style.display === 'none') return;
+        DOM.fsArt.src = song.img || '';
+        DOM.fsTitle.textContent = song.title;
+        DOM.fsArtist.textContent = song.artist;
+        DOM.fsAlbum.textContent = song.album || '';
+    },
+    syncPlayPause() {
+        if (!DOM.fsPlayIcon) return;
+        DOM.fsPlayIcon.style.display = state.isPlaying ? 'none' : 'block';
+        DOM.fsPauseIcon.style.display = state.isPlaying ? 'block' : 'none';
+        if (state.isPlaying) DOM.fsCd.classList.add('spinning');
+        else DOM.fsCd.classList.remove('spinning');
+    },
+};
 
 /* ── Init ───────────────────────────────────── */
 async function init() {
