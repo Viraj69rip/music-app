@@ -941,7 +941,7 @@ ul {
 /* ── Grid ───────────────────────────────────── */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(6, 1fr);
   gap: 16px;
   margin-bottom: 32px;
 }
@@ -961,6 +961,8 @@ ul {
   transition: all var(--t-normal);
   position: relative;
   animation: fadeSlideUp 0.5s var(--ease-out) backwards;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .card:nth-child(1) {
@@ -1014,12 +1016,16 @@ ul {
   position: relative;
   border-radius: var(--radius-sm);
   overflow: hidden;
-  aspect-ratio: 1;
+  aspect-ratio: 1 / 1;
+  width: 100%;
   margin-bottom: 10px;
   background: var(--bg-tertiary);
 }
 
 .card__art {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -1675,12 +1681,12 @@ ul {
   }
 
   .grid {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: repeat(5, 1fr);
     gap: 14px;
   }
 
   .grid--capped {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 210px));
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
@@ -2336,5 +2342,337 @@ ul {
 
   100% {
     transform: scale(1);
+  }
+}
+
+/* ================================================
+   FULLSCREEN NOW PLAYING
+   ================================================ */
+.fullscreen-player {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: linear-gradient(160deg, #0a0a12 0%, #0d1117 40%, #111827 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.fullscreen-player.active {
+  opacity: 1;
+}
+
+.fullscreen-player .fs-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(60px) brightness(0.3) saturate(1.5);
+  transform: scale(1.2);
+}
+
+.fs-close {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s;
+}
+
+.fs-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.fs-close svg {
+  width: 20px;
+  height: 20px;
+}
+
+.fs-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 420px;
+  padding: 40px 20px;
+}
+
+.fs-art-container {
+  margin-bottom: 32px;
+}
+
+/* ── Spinning CD ── */
+@keyframes rotating {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.fs-cd.cover-art {
+  width: 280px;
+  height: 280px;
+  animation: rotating 20s linear infinite;
+  animation-play-state: paused;
+  clip-path: circle(50% at 50% 50%);
+  position: relative;
+  border-radius: 50%;
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.6), 0 0 120px rgba(125, 211, 252, 0.08);
+}
+
+.fs-cd.cover-art.spinning {
+  animation-play-state: running;
+}
+
+.fs-cd.cover-art::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 22%;
+  height: 22%;
+  background:
+    radial-gradient(circle at center, rgba(24, 22, 35, 0.9) 0%, rgba(24, 22, 35, 0.9) 38%, rgba(255, 255, 255, 0.1) 38%, rgba(255, 255, 255, 0.1) 40%, rgba(24, 22, 35, 0.9) 40%, rgba(24, 22, 35, 0.9) 100%),
+    repeating-radial-gradient(circle at center, rgba(255, 255, 255, 0.1) 0, rgba(255, 255, 255, 0.1) 1px, transparent 1px, transparent 4px);
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3) inset, 0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+.fs-cd.cover-art::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 6%;
+  height: 6%;
+  background: rgba(24, 22, 35, 1);
+  border-radius: 50%;
+  box-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
+  z-index: 1;
+}
+
+.fs-art {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.fs-info {
+  text-align: center;
+  margin-bottom: 28px;
+  width: 100%;
+}
+
+.fs-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 6px;
+}
+
+.fs-artist {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 4px;
+}
+
+.fs-album {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.fs-progress {
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.fs-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.fs-progress-bar:hover {
+  height: 6px;
+}
+
+.fs-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #7dd3fc, #38bdf8);
+  border-radius: 4px;
+  transition: width 0.15s linear;
+}
+
+.fs-times {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 6px;
+}
+
+.fs-controls {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.fs-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.fs-btn:hover {
+  color: #fff;
+  transform: scale(1.1);
+}
+
+.fs-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+.fs-btn--main {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #fff;
+  color: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fs-btn--main:hover {
+  transform: scale(1.08);
+  background: #e8e8e8;
+}
+
+.fs-btn--main svg {
+  width: 24px;
+  height: 24px;
+  margin-left: 2px;
+}
+
+/* ================================================
+   BROWSE PAGE — SPOTIFY-STYLE CARDS
+   ================================================ */
+.genre-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.genre-card {
+  position: relative;
+  border-radius: 10px;
+  padding: 16px;
+  min-height: 120px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.genre-card:hover {
+  transform: scale(1.03);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+.genre-card__name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  position: relative;
+  z-index: 2;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.genre-card__icon {
+  position: absolute;
+  bottom: -5px;
+  right: -5px;
+  font-size: 64px;
+  opacity: 0.3;
+  transform: rotate(15deg);
+  z-index: 1;
+  pointer-events: none;
+}
+
+@media(max-width:1024px) {
+  .genre-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media(max-width:768px) {
+  .genre-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .genre-card {
+    min-height: 90px;
+    padding: 12px;
+  }
+
+  .genre-card__name {
+    font-size: 14px;
+  }
+
+  .genre-card__icon {
+    font-size: 48px;
+  }
+
+  /* Fullscreen mobile */
+  .fs-cd.cover-art {
+    width: 220px;
+    height: 220px;
+  }
+
+  .fs-title {
+    font-size: 18px;
+  }
+
+  .fs-controls {
+    gap: 18px;
+  }
+
+  .fs-btn--main {
+    width: 48px;
+    height: 48px;
   }
 }
