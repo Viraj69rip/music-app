@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Aurora Music — Premium music streaming with stunning UI and real-time search.">
+  <title>Aurora Music — Stream Music</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
+</head>
+
+<body>
+
+  <!-- FULLSCREEN BACKGROUND BLUR -->
+  <div class="bg-backdrop" id="bgBackdrop">
+    <img class="bg-backdrop__image" id="bgBackdropImage" src="" alt="">
+    <div class="bg-backdrop__overlay"></div>
+  </div>
+
+  <!-- LOADING OVERLAY -->
+  <div class="loader-overlay" id="loader">
+    <div class="loader-ring">
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+    </div>
+    <p class="loader-text">Loading Aurora<span class="loader-dots"></span></p>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- MOBILE MENU -->
+  <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <line x1="3" y1="12" x2="15" y2="12" />
+      <line x1="3" y1="18" x2="18" y2="18" />
+    </svg>
+  </button>
+
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="app">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar__top">
+        <div class="sidebar__logo">
+          <div class="sidebar__logo-icon">♪</div>
+          <div class="sidebar__logo-text">Aurora<span>.</span></div>
+        </div>
+        <button class="sidebar__close" id="sidebarClose" aria-label="Close menu">✕</button>
+      </div>
+
+      <div class="sidebar__section">
+        <p class="sidebar__section-title">Menu</p>
+        <ul>
+          <li class="sidebar__nav-item active" data-page="home">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+              <polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+            Home
+          </li>
+          <li class="sidebar__nav-item" data-page="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            Search
+          </li>
+          <li class="sidebar__nav-item" data-page="browse">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+            </svg>
+            Browse
+          </li>
+          <li class="sidebar__nav-item" data-page="library">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
+            </svg>
+            Library
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar__section">
+        <p class="sidebar__section-title">Your Playlists</p>
+        <ul>
+          <li class="sidebar__nav-item" data-page="favorites">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path
+                d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+            </svg>
+            Favorites
+          </li>
+          <li class="sidebar__nav-item" data-page="recent">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            Recently Played
+          </li>
+        </ul>
+      </div>
+
+      <!-- Sidebar Now Playing -->
+      <div class="sidebar__now-playing" id="sidebarNowPlaying" style="display:none;">
+        <p class="sidebar__now-playing-label">♪ Now Playing</p>
+        <div class="sidebar__now-playing-info">
+          <img class="sidebar__now-playing-art" id="sidebarArt" src="" alt="">
+          <div class="sidebar__now-playing-details">
+            <p class="sidebar__now-playing-title" id="sidebarTitle">—</p>
+            <p class="sidebar__now-playing-artist" id="sidebarArtist">—</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar__footer">
+        <p class="sidebar__footer-text">Made with ❤️ by Viraj Chavan</p>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main" id="mainContent">
+
+      <!-- Header -->
+      <div class="header">
+        <div class="header__left">
+          <h1 class="header__greeting" id="greetingText">Good Evening</h1>
+          <p class="header__sub" id="greetingSub">What do you want to listen to?</p>
+        </div>
+        <div class="header__search">
+          <div class="search">
+            <div class="search__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </div>
+            <input type="text" class="search__input" id="searchInput" placeholder="Search songs, artists, albums…"
+              autocomplete="off">
+            <button class="search__clear" id="searchClear" aria-label="Clear">✕</button>
+            <span class="search__hint">Ctrl+K</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- HOME PAGE -->
+      <div id="homePage" class="page active">
+        <div class="hero" id="heroBanner">
+          <div class="hero__orb"></div>
+          <div class="hero__orb hero__orb--2"></div>
+          <div class="hero__gradient"></div>
+          <div class="hero__content">
+            <span class="hero__badge">✦ Featured</span>
+            <h2 class="hero__title">Discover New Music</h2>
+            <p class="hero__desc">Stream millions of songs. Your next favorite track is just a search away.</p>
+          </div>
+          <button class="hero__play-btn" id="heroPlayBtn" aria-label="Play featured">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="6 3 20 12 6 21 6 3" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="section-header reveal">
+          <div>
+            <h2 class="section-header__title">🔥 Trending Now</h2>
+            <p class="section-header__subtitle">What everyone's listening to</p>
+          </div>
+        </div>
+        <div class="grid" id="trendingGrid"></div>
+
+        <div class="section-header reveal">
+          <div>
+            <h2 class="section-header__title">⭐ Popular Hits</h2>
+            <p class="section-header__subtitle">Top tracks this week</p>
+          </div>
+        </div>
+        <div class="grid" id="popularGrid"></div>
+      </div>
+
+      <!-- SEARCH PAGE -->
+      <div id="searchPage" class="page" style="display:none;">
+        <div class="search-page-header">
+          <h2 class="search-page-header__title" id="searchResultsTitle">Search Results</h2>
+          <p class="search-page-header__subtitle" id="searchResultsSubtitle"></p>
+          <div class="search-page-header__stats" id="searchStats"></div>
+        </div>
+        <div class="grid" id="searchGrid"></div>
+        <div class="empty-state" id="emptyState" style="display:none;">
+          <div class="empty-state__icon">🔍</div>
+          <h3 class="empty-state__title">No results found</h3>
+          <p class="empty-state__desc">Try a different search term</p>
+        </div>
+      </div>
+
+      <!-- BROWSE PAGE -->
+      <div id="browsePage" class="page" style="display:none;">
+        <div class="section-header">
+          <div>
+            <h2 class="section-header__title">🎵 Browse Genres</h2>
+            <p class="section-header__subtitle">Explore music by mood & genre</p>
+          </div>
+        </div>
+        <div class="genre-grid" id="genreGrid"></div>
+        <div class="section-header" style="margin-top:8px;">
+          <div>
+            <h2 class="section-header__title" id="browseResultsTitle">Top Charts</h2>
+            <p class="section-header__subtitle" id="browseResultsSub">Most popular right now</p>
+          </div>
+        </div>
+        <div class="grid" id="browseGrid"></div>
+      </div>
+
+      <!-- LIBRARY PAGE -->
+      <div id="libraryPage" class="page" style="display:none;">
+        <div class="page-header-fancy">
+          <div class="page-header-fancy__icon">📚</div>
+          <div>
+            <h2 class="page-header-fancy__title">Your Library</h2>
+            <p class="page-header-fancy__sub" id="libraryCount">All your played songs</p>
+          </div>
+        </div>
+        <div class="grid grid--capped" id="libraryGrid"></div>
+        <div class="empty-state" id="libraryEmpty">
+          <div class="empty-state__icon">📚</div>
+          <h3 class="empty-state__title">Your library is empty</h3>
+          <p class="empty-state__desc">Songs you play will appear here automatically.</p>
+        </div>
+      </div>
+
+      <!-- FAVORITES PAGE -->
+      <div id="favoritesPage" class="page" style="display:none;">
+        <div class="page-header-fancy">
+          <div class="page-header-fancy__icon">❤️</div>
+          <div>
+            <h2 class="page-header-fancy__title">Favorites</h2>
+            <p class="page-header-fancy__sub" id="favoritesCount">Songs you've liked</p>
+          </div>
+        </div>
+        <div class="grid grid--capped" id="favoritesGrid"></div>
+        <div class="empty-state" id="favoritesEmpty">
+          <div class="empty-state__icon">❤️</div>
+          <h3 class="empty-state__title">No favorites yet</h3>
+          <p class="empty-state__desc">Tap the heart ♡ on the player to save songs here.</p>
+        </div>
+      </div>
+
+      <!-- RECENTLY PLAYED PAGE -->
+      <div id="recentPage" class="page" style="display:none;">
+        <div class="page-header-fancy">
+          <div class="page-header-fancy__icon">🕐</div>
+          <div>
+            <h2 class="page-header-fancy__title">Recently Played</h2>
+            <p class="page-header-fancy__sub" id="recentCount">Your listening history</p>
+          </div>
+        </div>
+        <div class="grid grid--capped" id="recentGrid"></div>
+        <div class="empty-state" id="recentEmpty">
+          <div class="empty-state__icon">🕐</div>
+          <h3 class="empty-state__title">Nothing played yet</h3>
+          <p class="empty-state__desc">Start listening — your history will appear here.</p>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- PLAYER BAR -->
+  <div class="player hidden" id="player">
+    <div class="player__info">
+      <div class="player__art-wrapper">
+        <img class="player__art" id="playerArt" src="" alt="Album Art">
+      </div>
+      <div class="player__details">
+        <p class="player__title" id="playerTitle">Not Playing</p>
+        <p class="player__artist" id="playerArtist">—</p>
+      </div>
+      <button class="player__like-btn" id="likeBtn" aria-label="Like">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <path
+            d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+        </svg>
+      </button>
+    </div>
+    <div class="player__controls">
+      <div class="player__buttons">
+        <button class="player__btn" id="shuffleBtn" aria-label="Shuffle"><svg viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 3 21 3 21 8" />
+            <line x1="4" y1="20" x2="21" y2="3" />
+            <polyline points="21 16 21 21 16 21" />
+            <line x1="15" y1="15" x2="21" y2="21" />
+            <line x1="4" y1="4" x2="9" y2="9" />
+          </svg></button>
+        <button class="player__btn" id="prevBtn" aria-label="Previous"><svg viewBox="0 0 24 24" fill="currentColor">
+            <rect x="3" y="5" width="3" height="14" rx="1" />
+            <polygon points="21 5 9 12 21 19 21 5" />
+          </svg></button>
+        <button class="player__btn player__btn--main" id="playPauseBtn" aria-label="Play">
+          <svg viewBox="0 0 24 24" fill="currentColor" id="playIcon">
+            <polygon points="6 3 20 12 6 21 6 3" />
+          </svg>
+          <svg viewBox="0 0 24 24" fill="currentColor" id="pauseIcon" style="display:none;">
+            <rect x="5" y="4" width="5" height="16" rx="1" />
+            <rect x="14" y="4" width="5" height="16" rx="1" />
+          </svg>
+        </button>
+        <button class="player__btn" id="nextBtn" aria-label="Next"><svg viewBox="0 0 24 24" fill="currentColor">
+            <rect x="18" y="5" width="3" height="14" rx="1" />
+            <polygon points="3 5 15 12 3 19 3 5" />
+          </svg></button>
+        <button class="player__btn" id="repeatBtn" aria-label="Repeat"><svg viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="17 1 21 5 17 9" />
+            <path d="M3 11V9a4 4 0 014-4h14" />
+            <polyline points="7 23 3 19 7 15" />
+            <path d="M21 13v2a4 4 0 01-4 4H3" />
+          </svg></button>
+      </div>
+      <div class="player__progress">
+        <span class="player__time" id="currentTime">0:00</span>
+        <div class="player__progress-bar" id="progressBar">
+          <div class="player__progress-fill" id="progressFill">
+            <div class="player__progress-thumb"></div>
+          </div>
+        </div>
+        <span class="player__time" id="totalTime">0:00</span>
+      </div>
+    </div>
+    <div class="player__right">
+      <div class="player__volume">
+        <button class="player__volume-btn" id="volumeBtn" aria-label="Volume">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" id="volumeIcon">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+            <path d="M19.07 4.93a10 10 0 010 14.14" />
+            <path d="M15.54 8.46a5 5 0 010 7.07" />
+          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" id="muteIcon" style="display:none;">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+            <line x1="23" y1="9" x2="17" y2="15" />
+            <line x1="17" y1="9" x2="23" y2="15" />
+          </svg>
+        </button>
+        <input type="range" class="player__volume-slider" id="volumeSlider" min="0" max="100" value="80"
+          aria-label="Volume">
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
