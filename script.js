@@ -90,10 +90,9 @@ const GENRES = [
     { name: 'Punjabi', icon: '🎶', query: 'punjabi songs latest', bg: 'linear-gradient(135deg,#ff7675,#fdcb6e)' },
 ];
 
-/* ── State ──────────────────────────────────── */
 const state = {
     playlist: [], currentIndex: -1, isPlaying: false, isShuffle: false, repeatMode: 'none',
-    volume: 0.8, isMuted: false, searchTimeout: null, audio: new Audio(),
+    volume: 1.0, isMuted: false, searchTimeout: null, audio: new Audio(),
     isLoading: false, isDragging: false, currentPage: 'home',
     favorites: JSON.parse(localStorage.getItem('aurora_fav') || '[]'),
     recentlyPlayed: JSON.parse(localStorage.getItem('aurora_recent') || '[]'),
@@ -117,6 +116,7 @@ function cacheDom() {
         'fullscreenPlayer', 'fsClose', 'fsCd', 'fsArt', 'fsTitle', 'fsArtist', 'fsAlbum',
         'fsProgressBar', 'fsProgressFill', 'fsCurrentTime', 'fsTotalTime',
         'fsPlayPause', 'fsPlayIcon', 'fsPauseIcon', 'fsPrev', 'fsNext', 'fsShuffle', 'fsRepeat',
+        'fullscreenBtn', 'fsLyricsContainer', 'fsLyricsText'
     ].forEach(id => DOM[id] = $(`#${id}`));
 }
 
@@ -148,7 +148,9 @@ const MusicAPI = {
             const url = `${SAAVN_API}?__call=search.getResults&_format=json&_marker=0&cc=in&includeMetaTags=1&p=1&q=${encodeURIComponent(query)}&n=${limit}`;
             const data = await corsGet(url);
             if (data && data.results && data.results.length > 0) {
-                return data.results.map((t, i) => MusicAPI.norm(t, i)).filter(s => s.streamUrl);
+                let songs = data.results.map((t, i) => MusicAPI.norm(t, i)).filter(s => s.streamUrl);
+                songs.sort((a, b) => b.playCount - a.playCount);
+                return songs;
             }
         } catch (e) { console.warn('[API]', e.message); }
         return [];
@@ -174,6 +176,15 @@ const MusicAPI = {
     async fetchOne(q) {
         const r = await MusicAPI.search(q, 1);
         return r.length > 0 ? r[0] : null;
+    },
+
+    async getLyrics(id) {
+        try {
+            const url = `${SAAVN_API}?__call=lyrics.getLyrics&ctx=web6dot0&api_version=4&_format=json&_marker=0%3F_marker%3D0&lyrics_id=${id}`;
+            const data = await corsGet(url);
+            if (data && data.lyrics) return data.lyrics;
+        } catch (e) { console.warn('[Lyrics API]', e.message); }
+        return null;
     },
 };
 
@@ -276,6 +287,10 @@ const UI = {
 const Player = {
     async play(index) {
         if (index < 0 || index >= state.playlist.length || state.isLoading) return;
+        if (index === state.currentIndex && state.audio.src) {
+            Player.toggle();
+            return;
+        }
         state.isLoading = true; state.currentIndex = index;
         const song = state.playlist[index];
         UI.updatePlayer(song); UI.updatePlayPause(false); UI.highlightPlaying(index);
@@ -534,6 +549,11 @@ function bindEvents() {
         if (DOM.fsProgressFill) DOM.fsProgressFill.style.width = `${pct}%`;
         if (DOM.fsCurrentTime) DOM.fsCurrentTime.textContent = UI.fmt(state.audio.currentTime);
         if (DOM.fsTotalTime) DOM.fsTotalTime.textContent = UI.fmt(state.audio.duration);
+
+        // Update Lyrics Sync
+        if (DOM.fullscreenPlayer.style.display !== 'none') {
+            FullscreenPlayer.updateLyrics(state.audio.currentTime);
+        }
     });
     state.audio.addEventListener('loadedmetadata', () => DOM.totalTime.textContent = UI.fmt(state.audio.duration));
     state.audio.addEventListener('ended', () => {
@@ -587,6 +607,7 @@ function bindEvents() {
         const pct = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
         Player.seek(pct);
     });
+    if (DOM.fullscreenBtn) DOM.fullscreenBtn.addEventListener('click', () => FullscreenPlayer.open());
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && DOM.fullscreenPlayer.style.display !== 'none') FullscreenPlayer.close(); });
 
     if ('mediaSession' in navigator) {
@@ -614,6 +635,50 @@ const FullscreenPlayer = {
         if (state.isPlaying) DOM.fsCd.classList.add('spinning');
         else DOM.fsCd.classList.remove('spinning');
         FullscreenPlayer.syncPlayPause();
+
+        // Fetch lyrics
+        const cleanId = song.id.replace('jio-', '');
+        DOM.fsLyricsText.innerHTML = '';
+        DOM.fsLyricsText.className = 'fs-lyrics-container';
+        DOM.fullscreenPlayer.querySelector('.fs-right').style.display = 'block';
+
+        MusicAPI.getLyrics(cleanId).then(lyrics => {
+            if (!lyrics) {
+                DOM.fullscreenPlayer.querySelector('.fs-right').style.display = 'none';
+                return;
+            }
+
+            // Basic parser for JioSaavn lyrics (which often look like text, sometimes with [mm:ss] tags)
+            const lines = lyrics.replace(/<br\s*\/?>/gi, '\n').split('\n');
+            let hasSync = false;
+            let html = '';
+
+            FullscreenPlayer._lyricsData = [];
+
+            lines.forEach((line, i) => {
+                const text = line.replace(/\[\d+:\d+\.\d+\]/g, '').trim();
+                if (!text) return;
+
+                const match = line.match(/\[(\d+):(\d+\.\d+)\]/);
+                let time = null;
+
+                if (match) {
+                    hasSync = true;
+                    time = parseInt(match[1]) * 60 + parseFloat(match[2]);
+                    FullscreenPlayer._lyricsData.push({ time, index: i, text, el: null });
+                }
+
+                html += `<div class="lyrics-line ${hasSync ? '' : 'unsynced'}" id="ll-${i}" data-time="${time || ''}">${UI.esc(text)}</div>`;
+            });
+
+            DOM.fsLyricsText.innerHTML = html;
+
+            if (hasSync) {
+                FullscreenPlayer._lyricsData.forEach(d => d.el = document.getElementById(`ll-${d.index}`));
+            } else {
+                FullscreenPlayer._lyricsData = []; // No valid sync
+            }
+        });
     },
     close() {
         DOM.fullscreenPlayer.classList.remove('active');
@@ -625,6 +690,33 @@ const FullscreenPlayer = {
         DOM.fsTitle.textContent = song.title;
         DOM.fsArtist.textContent = song.artist;
         DOM.fsAlbum.textContent = song.album || '';
+        FullscreenPlayer._lyricsData = []; // Reset lyrics
+        const cleanId = song.id.replace('jio-', '');
+        DOM.fsLyricsText.innerHTML = '';
+        MusicAPI.getLyrics(cleanId).then(lyrics => {
+            if (!lyrics) {
+                DOM.fullscreenPlayer.querySelector('.fs-right').style.display = 'none';
+                return;
+            }
+            DOM.fullscreenPlayer.querySelector('.fs-right').style.display = 'block';
+            const lines = lyrics.replace(/<br\s*\/?>/gi, '\n').split('\n');
+            let hasSync = false; let html = '';
+            FullscreenPlayer._lyricsData = [];
+            lines.forEach((line, i) => {
+                const text = line.replace(/\[\d+:\d+\.\d+\]/g, '').trim();
+                if (!text) return;
+                const match = line.match(/\[(\d+):(\d+\.\d+)\]/);
+                let time = null;
+                if (match) {
+                    hasSync = true; time = parseInt(match[1]) * 60 + parseFloat(match[2]);
+                    FullscreenPlayer._lyricsData.push({ time, index: i, text, el: null });
+                }
+                html += `<div class="lyrics-line ${hasSync ? '' : 'unsynced'}" id="ll-${i}" data-time="${time || ''}">${UI.esc(text)}</div>`;
+            });
+            DOM.fsLyricsText.innerHTML = html;
+            if (hasSync) FullscreenPlayer._lyricsData.forEach(d => d.el = document.getElementById(`ll-${d.index}`));
+            else FullscreenPlayer._lyricsData = [];
+        });
     },
     syncPlayPause() {
         if (!DOM.fsPlayIcon) return;
@@ -633,6 +725,38 @@ const FullscreenPlayer = {
         if (state.isPlaying) DOM.fsCd.classList.add('spinning');
         else DOM.fsCd.classList.remove('spinning');
     },
+    updateLyrics(currentTime) {
+        if (!FullscreenPlayer._lyricsData || !FullscreenPlayer._lyricsData.length) return;
+
+        // Find the current active line
+        let activeIdx = -1;
+        for (let i = 0; i < FullscreenPlayer._lyricsData.length; i++) {
+            if (currentTime >= FullscreenPlayer._lyricsData[i].time) {
+                activeIdx = i;
+            } else {
+                break;
+            }
+        }
+
+        if (activeIdx !== -1 && activeIdx !== FullscreenPlayer._activeLyricIdx) {
+            // Remove active from previous
+            if (FullscreenPlayer._activeLyricIdx !== undefined && FullscreenPlayer._lyricsData[FullscreenPlayer._activeLyricIdx].el) {
+                FullscreenPlayer._lyricsData[FullscreenPlayer._activeLyricIdx].el.classList.remove('active');
+            }
+
+            // Add active to new
+            const activeEl = FullscreenPlayer._lyricsData[activeIdx].el;
+            if (activeEl) {
+                activeEl.classList.add('active');
+
+                // Scroll into view (center)
+                const container = DOM.fsLyricsText.parentElement;
+                const offset = activeEl.offsetTop - (container.clientHeight / 2) + (activeEl.clientHeight / 2);
+                container.scrollTo({ top: offset, behavior: 'smooth' });
+            }
+            FullscreenPlayer._activeLyricIdx = activeIdx;
+        }
+    }
 };
 
 /* ── Init ───────────────────────────────────── */
