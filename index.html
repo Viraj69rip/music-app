@@ -290,59 +290,67 @@
         <polyline points="6 9 12 15 18 9" />
       </svg>
     </button>
-    <div class="fs-content">
-      <div class="fs-art-container">
-        <div class="fs-cd cover-art" id="fsCd">
-          <img class="fs-art" id="fsArt" src="" alt="Album Art">
+    <div class="fs-glass-container">
+      <div class="fs-left">
+        <div class="fs-art-container">
+          <div class="fs-cd cover-art" id="fsCd">
+            <img class="fs-art" id="fsArt" src="" alt="Album Art">
+          </div>
+        </div>
+        <div class="fs-info">
+          <h1 class="fs-title" id="fsTitle">Not Playing</h1>
+          <p class="fs-artist" id="fsArtist">—</p>
+          <p class="fs-album" id="fsAlbum"></p>
+        </div>
+        <div class="fs-progress">
+          <div class="fs-progress-bar" id="fsProgressBar">
+            <div class="fs-progress-fill" id="fsProgressFill"></div>
+          </div>
+          <div class="fs-times">
+            <span id="fsCurrentTime">0:00</span>
+            <span id="fsTotalTime">0:00</span>
+          </div>
+        </div>
+        <div class="fs-controls">
+          <button class="fs-btn" id="fsShuffle" aria-label="Shuffle"><svg viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="16 3 21 3 21 8" />
+              <line x1="4" y1="20" x2="21" y2="3" />
+              <polyline points="21 16 21 21 16 21" />
+              <line x1="15" y1="15" x2="21" y2="21" />
+              <line x1="4" y1="4" x2="9" y2="9" />
+            </svg></button>
+          <button class="fs-btn" id="fsPrev" aria-label="Previous"><svg viewBox="0 0 24 24" fill="currentColor">
+              <rect x="3" y="5" width="3" height="14" rx="1" />
+              <polygon points="21 5 9 12 21 19 21 5" />
+            </svg></button>
+          <button class="fs-btn fs-btn--main" id="fsPlayPause" aria-label="Play">
+            <svg viewBox="0 0 24 24" fill="currentColor" id="fsPlayIcon">
+              <polygon points="6 3 20 12 6 21 6 3" />
+            </svg>
+            <svg viewBox="0 0 24 24" fill="currentColor" id="fsPauseIcon" style="display:none;">
+              <rect x="5" y="4" width="5" height="16" rx="1" />
+              <rect x="14" y="4" width="5" height="16" rx="1" />
+            </svg>
+          </button>
+          <button class="fs-btn" id="fsNext" aria-label="Next"><svg viewBox="0 0 24 24" fill="currentColor">
+              <rect x="18" y="5" width="3" height="14" rx="1" />
+              <polygon points="3 5 15 12 3 19 3 5" />
+            </svg></button>
+          <button class="fs-btn" id="fsRepeat" aria-label="Repeat"><svg viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="17 1 21 5 17 9" />
+              <path d="M3 11V9a4 4 0 014-4h14" />
+              <polyline points="7 23 3 19 7 15" />
+              <path d="M21 13v2a4 4 0 01-4 4H3" />
+            </svg></button>
         </div>
       </div>
-      <div class="fs-info">
-        <h1 class="fs-title" id="fsTitle">Not Playing</h1>
-        <p class="fs-artist" id="fsArtist">—</p>
-        <p class="fs-album" id="fsAlbum"></p>
-      </div>
-      <div class="fs-progress">
-        <div class="fs-progress-bar" id="fsProgressBar">
-          <div class="fs-progress-fill" id="fsProgressFill"></div>
+      <div class="fs-right">
+        <h3 class="fs-lyrics-title">Lyrics</h3>
+        <div class="fs-lyrics" id="fsLyricsContainer">
+          <p class="fs-lyrics-text" id="fsLyricsText">Loading lyrics...</p>
         </div>
-        <div class="fs-times">
-          <span id="fsCurrentTime">0:00</span>
-          <span id="fsTotalTime">0:00</span>
-        </div>
-      </div>
-      <div class="fs-controls">
-        <button class="fs-btn" id="fsShuffle" aria-label="Shuffle"><svg viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="16 3 21 3 21 8" />
-            <line x1="4" y1="20" x2="21" y2="3" />
-            <polyline points="21 16 21 21 16 21" />
-            <line x1="15" y1="15" x2="21" y2="21" />
-            <line x1="4" y1="4" x2="9" y2="9" />
-          </svg></button>
-        <button class="fs-btn" id="fsPrev" aria-label="Previous"><svg viewBox="0 0 24 24" fill="currentColor">
-            <rect x="3" y="5" width="3" height="14" rx="1" />
-            <polygon points="21 5 9 12 21 19 21 5" />
-          </svg></button>
-        <button class="fs-btn fs-btn--main" id="fsPlayPause" aria-label="Play">
-          <svg viewBox="0 0 24 24" fill="currentColor" id="fsPlayIcon">
-            <polygon points="6 3 20 12 6 21 6 3" />
-          </svg>
-          <svg viewBox="0 0 24 24" fill="currentColor" id="fsPauseIcon" style="display:none;">
-            <rect x="5" y="4" width="5" height="16" rx="1" />
-            <rect x="14" y="4" width="5" height="16" rx="1" />
-          </svg>
-        </button>
-        <button class="fs-btn" id="fsNext" aria-label="Next"><svg viewBox="0 0 24 24" fill="currentColor">
-            <rect x="18" y="5" width="3" height="14" rx="1" />
-            <polygon points="3 5 15 12 3 19 3 5" />
-          </svg></button>
-        <button class="fs-btn" id="fsRepeat" aria-label="Repeat"><svg viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="17 1 21 5 17 9" />
-            <path d="M3 11V9a4 4 0 014-4h14" />
-            <polyline points="7 23 3 19 7 15" />
-            <path d="M21 13v2a4 4 0 01-4 4H3" />
-          </svg></button>
       </div>
     </div>
   </div>
@@ -429,6 +437,15 @@
         <input type="range" class="player__volume-slider" id="volumeSlider" min="0" max="100" value="80"
           aria-label="Volume">
       </div>
+      <button class="player__btn" id="fullscreenBtn" aria-label="Fullscreen" style="margin-left: 10px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <polyline points="15 3 21 3 21 9"></polyline>
+          <polyline points="9 21 3 21 3 15"></polyline>
+          <line x1="21" y1="3" x2="14" y2="10"></line>
+          <line x1="3" y1="21" x2="10" y2="14"></line>
+        </svg>
+      </button>
     </div>
   </div>
 
